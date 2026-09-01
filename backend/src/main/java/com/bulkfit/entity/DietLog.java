@@ -2,16 +2,14 @@ package com.bulkfit.entity;
 
 import com.bulkfit.enums.MealType;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.time.LocalDate;
 
 @Entity
 @Table(name = "diet_logs")
-@Data
+@Getter
+@Setter // @Data hata diya taaki infinite loop aur lazy loading issues na aayen
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder

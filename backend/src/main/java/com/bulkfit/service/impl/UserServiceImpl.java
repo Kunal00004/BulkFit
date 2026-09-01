@@ -22,6 +22,7 @@ public class UserServiceImpl implements UserService {
     private final NutritionCalculator nutritionCalculator;
 
     @Override
+    @Transactional(readOnly = true) // Optimize database connection
     public User getCurrentUserEntity() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         UserPrincipal principal = (UserPrincipal) authentication.getPrincipal();
@@ -30,6 +31,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    @Transactional(readOnly = true) // Optimize database connection
     public UserResponse getCurrentUser() {
         return toResponse(getCurrentUserEntity());
     }
@@ -49,6 +51,8 @@ public class UserServiceImpl implements UserService {
                 .fullName(user.getFullName())
                 .email(user.getEmail())
                 .age(user.getAge())
+                .gender(user.getGender())               // Added missing field!
+                .activityLevel(user.getActivityLevel()) // Added missing field!
                 .heightCm(user.getHeightCm())
                 .currentWeightKg(user.getCurrentWeightKg())
                 .targetWeightKg(user.getTargetWeightKg())

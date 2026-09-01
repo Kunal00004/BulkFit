@@ -6,6 +6,7 @@ import com.bulkfit.repository.ExerciseRepository;
 import com.bulkfit.service.ExerciseService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -17,6 +18,7 @@ public class ExerciseServiceImpl implements ExerciseService {
     private final ExerciseRepository exerciseRepository;
 
     @Override
+    @Transactional(readOnly = true) // Database connection ko optimize aur safe rakhne ke liye
     public List<ExerciseResponse> getAllExercises() {
         return exerciseRepository.findAll().stream().map(this::toResponse).collect(Collectors.toList());
     }

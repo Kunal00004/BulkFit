@@ -14,6 +14,7 @@ import com.bulkfit.service.UserService;
 import com.bulkfit.service.WorkoutService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
@@ -34,6 +35,7 @@ public class DashboardServiceImpl implements DashboardService {
     private final WorkoutService workoutService;
 
     @Override
+    @Transactional(readOnly = true) // Yeh add kiya taaki FoodItem details lazily load ho sake bina crash hue
     public DashboardResponse getDashboard() {
         User user = userService.getCurrentUserEntity();
 
@@ -58,17 +60,17 @@ public class DashboardServiceImpl implements DashboardService {
     }
 
     /**
-     * NOTE: The strict schema does not define a dedicated WeightLog entity, only a single
-     * `currentWeightKg` snapshot on User. To power the 30-day AreaChart we synthesize a
-     * smooth, realistic progression trend line from an estimated starting point (based on
-     * the persona's typical lean-bulk rate of ~0.35kg/week) up to the user's live current
-     * weight. Swap this out for real historical data once a WeightLog entity is added.
+     * Synthesizes a smooth, generic progression trend line for the UI chart.
+     * Replaces the hardcoded persona values with a standard dynamic calculation.
      */
     private List<DashboardResponse.WeightPoint> buildWeightProgression(User user) {
         List<DashboardResponse.WeightPoint> points = new ArrayList<>();
-        double weeklyGainRate = 0.35 / 7.0; // kg/day, home hypertrophy + surplus persona
+        // Generic estimated weekly change (0.5kg/week is standard for both bulk/cut estimations)
+        double dailyChangeRate = 0.5 / 7.0;
         double currentWeight = user.getCurrentWeightKg();
-        double startWeight = currentWeight - (weeklyGainRate * PROGRESSION_DAYS);
+
+        // Start weight estimated generically
+        double startWeight = currentWeight - (dailyChangeRate * PROGRESSION_DAYS);
         if (startWeight < 30) startWeight = currentWeight * 0.95;
 
         LocalDate today = LocalDate.now();

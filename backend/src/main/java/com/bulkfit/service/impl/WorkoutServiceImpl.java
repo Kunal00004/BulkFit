@@ -48,10 +48,6 @@ public class WorkoutServiceImpl implements WorkoutService {
         return toResponse(saved);
     }
 
-    /**
-     * Supports the dynamic "add set row" UI: each row becomes its own WorkoutLog entry
-     * (sets=1, reps=X) sharing the same exercise + date.
-     */
     @Override
     @Transactional
     public List<WorkoutLogResponse> logWorkoutBatch(List<WorkoutLogRequest> requests) {
@@ -62,6 +58,7 @@ public class WorkoutServiceImpl implements WorkoutService {
     }
 
     @Override
+    @Transactional(readOnly = true) // Yeh zaroori tha lazily load karne ke liye!
     public List<WorkoutLogResponse> getRecentWorkouts(int limit) {
         User user = userService.getCurrentUserEntity();
         return workoutLogRepository.findTop5ByUserOrderByIdDesc(user).stream()

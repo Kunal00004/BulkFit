@@ -5,40 +5,56 @@ import org.springframework.stereotype.Component;
 
 /**
  * BulkFit's core math engine.
- *
- * Persona baseline: young male, home-based progressive overload, aiming for a LEAN BULK.
- * Uses Mifflin-St Jeor BMR, a home-workout activity multiplier (moderate - no gym machines,
- * mostly bodyweight/calisthenics), and a fixed caloric surplus tuned for steady muscle gain
- * (~0.25-0.5 kg/week) without excessive fat gain.
+ * Uses dynamic Mifflin-St Jeor BMR equation and activity multipliers.
+ * Calculates caloric surplus tuned for steady muscle gain.
  */
 @Component
 public class NutritionCalculator {
 
-    private static final double ACTIVITY_MULTIPLIER = 1.55; // moderate home workouts, 4-5x/week
     private static final double SURPLUS_CALORIES = 400.0;   // daily surplus for lean bulking
     private static final double PROTEIN_PER_KG_BODYWEIGHT = 2.0; // g/kg for hypertrophy
 
-    /**
-     * Mifflin-St Jeor equation (male):
-     * BMR = 10*weight(kg) + 6.25*height(cm) - 5*age + 5
-     */
     public double calculateBmr(User user) {
-        return (10 * user.getCurrentWeightKg())
+        double baseBmr = (10 * user.getCurrentWeightKg())
                 + (6.25 * user.getHeightCm())
-                - (5 * user.getAge())
-                + 5;
+                - (5 * user.getAge());
+
+        // Dynamic calculation based on user's gender
+        if (user.getGender() != null && user.getGender().equalsIgnoreCase("FEMALE")) {
+            return baseBmr - 161;
+        } else {
+            return baseBmr + 5; // Default to Male
+        }
     }
 
     public double calculateMaintenanceCalories(User user) {
-        return calculateBmr(user) * ACTIVITY_MULTIPLIER;
+        double activityMultiplier = 1.2; // Default Sedentary (desk job)
+
+        if (user.getActivityLevel() != null) {
+            switch (user.getActivityLevel().toUpperCase()) {
+                case "LIGHT":
+                    activityMultiplier = 1.375; // Light exercise 1-3 days/week
+                    break;
+                case "MODERATE":
+                    activityMultiplier = 1.55;  // Moderate exercise 3-5 days/week
+                    break;
+                case "ACTIVE":
+                    activityMultiplier = 1.725; // Heavy exercise 6-7 days/week
+                    break;
+                case "EXTRA_ACTIVE":
+                    activityMultiplier = 1.9;   // Very heavy physical job/training
+                    break;
+                default:
+                    activityMultiplier = 1.2;
+            }
+        }
+        return calculateBmr(user) * activityMultiplier;
     }
 
-    /** Daily calorie goal = maintenance + surplus, to drive weight gain. */
     public double calculateDailyCalorieGoal(User user) {
         return Math.round(calculateMaintenanceCalories(user) + SURPLUS_CALORIES);
     }
 
-    /** Protein goal for muscle protein synthesis, based on current bodyweight. */
     public double calculateDailyProteinGoalGrams(User user) {
         return Math.round(user.getCurrentWeightKg() * PROTEIN_PER_KG_BODYWEIGHT);
     }

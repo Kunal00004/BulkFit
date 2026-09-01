@@ -53,6 +53,7 @@ public class DietServiceImpl implements DietService {
     }
 
     @Override
+    @Transactional(readOnly = true) // Yeh add kiya taaki session open rahe
     public DailyDietSummaryResponse getDailySummary(LocalDate date) {
         User user = userService.getCurrentUserEntity();
         LocalDate targetDate = date != null ? date : LocalDate.now();
@@ -77,6 +78,7 @@ public class DietServiceImpl implements DietService {
     }
 
     @Override
+    @Transactional(readOnly = true) // Yahan bhi zaroori tha
     public List<DietLogResponse> getRecentMeals(int limit) {
         User user = userService.getCurrentUserEntity();
         return dietLogRepository.findTop5ByUserOrderByIdDesc(user).stream()

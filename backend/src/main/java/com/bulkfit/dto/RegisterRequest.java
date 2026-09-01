@@ -21,6 +21,13 @@ public class RegisterRequest {
     @Max(value = 100, message = "Age must be realistic")
     private int age;
 
+    // Naye Generic Fields Add Kiye
+    @NotBlank(message = "Gender is required")
+    private String gender;
+
+    @NotBlank(message = "Activity level is required")
+    private String activityLevel;
+
     @Positive(message = "Height must be positive")
     private Double heightCm;
 

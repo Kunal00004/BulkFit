@@ -2,14 +2,12 @@ package com.bulkfit.entity;
 
 import com.bulkfit.enums.DifficultyLevel;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 @Entity
 @Table(name = "exercises")
-@Data
+@Getter
+@Setter // @Data hata diya taaki future mein koi Lazy loading crash na ho
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder

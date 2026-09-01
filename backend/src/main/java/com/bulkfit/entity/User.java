@@ -2,20 +2,14 @@ package com.bulkfit.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.time.LocalDateTime;
 
-/**
- * Core user/profile entity.
- * Default persona baseline: 22yo male, 53kg start weight, home-based hypertrophy training.
- */
 @Entity
 @Table(name = "users")
-@Data
+@Getter
+@Setter // Sirf Getter/Setter use karo, @Data HATA DO
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
@@ -38,6 +32,13 @@ public class User {
     @Column(nullable = false)
     private int age;
 
+    // Added: Gender (M/F) aur Activity Level BMR calculations ke liye zaroori hain
+    @Column(nullable = false, length = 10)
+    private String gender;
+
+    @Column(name = "activity_level", nullable = false)
+    private String activityLevel;
+
     @Column(name = "height_cm", nullable = false)
     private Double heightCm;
 
@@ -47,7 +48,8 @@ public class User {
     @Column(name = "target_weight_kg", nullable = false)
     private Double targetWeightKg;
 
-    @Column(nullable = false)
+    // Role ko Enum banana chahiye tha, par abhi String hai toh DB length restrict karo
+    @Column(nullable = false, length = 20)
     private String role;
 
     @Column(name = "created_at", updatable = false)
@@ -57,7 +59,7 @@ public class User {
     protected void onCreate() {
         this.createdAt = LocalDateTime.now();
         if (this.role == null) {
-            this.role = "USER";
+            this.role = "ROLE_USER"; // Spring Security standard "ROLE_" prefix mangta hai
         }
     }
 }

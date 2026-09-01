@@ -1,12 +1,15 @@
 import React from "react";
 import { NavLink, useNavigate } from "react-router-dom";
-import { LayoutDashboard, Utensils, Dumbbell, LogOut, Flame } from "lucide-react";
+// Yahan humne 'Brain' icon add kar diya hai
+import { LayoutDashboard, Utensils, Dumbbell, LogOut, Flame, Brain } from "lucide-react"; 
 import { useAuth } from "../context/AuthContext.jsx";
 
+// Yahan array mein naya 'AI Coach' ka route add ho gaya hai
 const navItems = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { to: "/diet", label: "Diet Logger", icon: Utensils },
   { to: "/workout", label: "Workout Logger", icon: Dumbbell },
+  { to: "/coach", label: "AI Coach", icon: Brain }, 
 ];
 
 export default function Navbar() {

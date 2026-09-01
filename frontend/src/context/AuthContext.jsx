@@ -9,7 +9,7 @@ export function AuthProvider({ children }) {
     return stored ? JSON.parse(stored) : null;
   });
   const [token, setToken] = useState(() => localStorage.getItem("bulkfit_token"));
-  const [loading, setLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(true); // Isko App.jsx ke hisaab se theek kiya
 
   const persistSession = (authResponse) => {
     const { token: newToken, user: newUser } = authResponse;
@@ -18,6 +18,13 @@ export function AuthProvider({ children }) {
     setToken(newToken);
     setUser(newUser);
   };
+
+  const logout = useCallback(() => {
+    localStorage.removeItem("bulkfit_token");
+    localStorage.removeItem("bulkfit_user");
+    setToken(null);
+    setUser(null);
+  }, []);
 
   const login = useCallback(async (credentials) => {
     const { data } = await authApi.login(credentials);
@@ -31,29 +38,23 @@ export function AuthProvider({ children }) {
     return data;
   }, []);
 
-  const logout = useCallback(() => {
-    localStorage.removeItem("bulkfit_token");
-    localStorage.removeItem("bulkfit_user");
-    setToken(null);
-    setUser(null);
-  }, []);
-
   const refreshUser = useCallback(async () => {
     try {
       const { data } = await userApi.getMe();
       setUser(data);
       localStorage.setItem("bulkfit_user", JSON.stringify(data));
     } catch (err) {
-      // token invalid / expired - axios interceptor handles redirect
+      console.error("Session expired or invalid.", err);
+      logout(); // Token invalid hone par user ko automatically logout karo
     }
-  }, []);
+  }, [logout]);
 
   useEffect(() => {
     const bootstrap = async () => {
       if (token) {
         await refreshUser();
       }
-      setLoading(false);
+      setIsLoading(false); // App ab seamlessly load hogi
     };
     bootstrap();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -63,7 +64,7 @@ export function AuthProvider({ children }) {
     user,
     token,
     isAuthenticated: !!token,
-    loading,
+    isLoading, // Yahan return kiya taaki App.jsx isko read kar sake
     login,
     register,
     logout,

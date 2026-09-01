@@ -1,16 +1,19 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Flame, Mail, Lock, User as UserIcon, Ruler, Weight, Target, Cake, Eye, EyeOff, Check, X } from "lucide-react";
+import { Flame, Mail, Lock, User as UserIcon, Ruler, Weight, Target, Cake, Eye, EyeOff, Check, X, Activity, Users } from "lucide-react";
 import { useAuth } from "../context/AuthContext.jsx";
 
+// 1. Removed personal hardcoded data. Added generic empty defaults and new fields.
 const initialRegisterState = {
   fullName: "",
   email: "",
   password: "",
-  age: 22,
-  heightCm: 170,
-  currentWeightKg: 53,
-  targetWeightKg: 65,
+  age: "",
+  gender: "MALE", // Default dropdown value
+  activityLevel: "SEDENTARY", // Default dropdown value
+  heightCm: "",
+  currentWeightKg: "",
+  targetWeightKg: "",
 };
 
 function PasswordStrength({ password }) {
@@ -82,11 +85,14 @@ export default function AuthPage() {
   const isRegisterValid =
     registerForm.fullName.trim().length > 1 &&
     /\S+@\S+\.\S+/.test(registerForm.email) &&
-    registerForm.password.length >= 8;
+    registerForm.password.length >= 8 &&
+    registerForm.age !== "" &&
+    registerForm.heightCm !== "" &&
+    registerForm.currentWeightKg !== "";
 
   return (
     <div className="min-h-screen flex bg-base">
-      {/* Left: motivational panel */}
+      {/* Left: Professional SaaS Panel (Wiped all personal text) */}
       <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden bg-gradient-to-br from-slate-900 via-slate-900 to-emerald-950/40">
         <div className="absolute inset-0 opacity-[0.07]" style={{
           backgroundImage: "radial-gradient(circle, #10B981 1px, transparent 1px)",
@@ -102,42 +108,42 @@ export default function AuthPage() {
 
           <div className="space-y-6 animate-fade-in">
             <p className="text-emerald-400 text-sm font-semibold uppercase tracking-widest">
-              Home-Based Hypertrophy
+              Intelligent Hypertrophy Engine
             </p>
             <h1 className="text-5xl xl:text-6xl font-extrabold leading-[1.05] tracking-tight">
-              From 53kg
+              Build Mass. Track Progress.
               <br />
-              to your{" "}
+              Unleash your{" "}
               <span className="bg-gradient-to-r from-emerald-400 to-emerald-300 bg-clip-text text-transparent">
                 strongest self.
               </span>
             </h1>
             <p className="text-slate-400 text-lg max-w-md leading-relaxed">
-              No gym required. Track your caloric surplus, log progressive overload sets,
-              and watch your weight progression climb — one rep, one meal at a time.
+              Precision weight gain tracking. Log your caloric surplus, monitor progressive overload sets,
+              and watch your physique transform scientifically.
             </p>
           </div>
 
           <div className="flex gap-8 text-sm text-slate-500">
             <div>
-              <p className="text-2xl font-bold text-slate-100">2g/kg</p>
-              <p>Protein target</p>
+              <p className="text-2xl font-bold text-slate-100">Smart</p>
+              <p>Macro Targets</p>
             </div>
             <div>
-              <p className="text-2xl font-bold text-slate-100">+400</p>
-              <p>Daily kcal surplus</p>
+              <p className="text-2xl font-bold text-slate-100">Tailored</p>
+              <p>Caloric Surplus</p>
             </div>
             <div>
-              <p className="text-2xl font-bold text-slate-100">0</p>
-              <p>Equipment needed</p>
+              <p className="text-2xl font-bold text-slate-100">Zero</p>
+              <p>Equipment Needed</p>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Right: auth form */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center p-6 sm:p-10">
-        <div className="w-full max-w-md">
+      {/* Right: Auth form */}
+      <div className="w-full lg:w-1/2 flex items-center justify-center p-6 sm:p-10 h-screen overflow-y-auto">
+        <div className="w-full max-w-md my-auto pb-8 pt-8">
           <div className="lg:hidden flex items-center gap-2 mb-8 justify-center">
             <div className="w-9 h-9 rounded-xl bg-emerald-500 flex items-center justify-center">
               <Flame className="w-5 h-5 text-slate-900" strokeWidth={2.5} />
@@ -221,7 +227,7 @@ export default function AuthPage() {
                     <input
                       required
                       className="input-field pl-10"
-                      placeholder="Arjun Sharma"
+                      placeholder="Alex Turner"
                       value={registerForm.fullName}
                       onChange={(e) => setRegisterForm({ ...registerForm, fullName: e.target.value })}
                     />
@@ -266,6 +272,41 @@ export default function AuthPage() {
                   <PasswordStrength password={registerForm.password} />
                 </div>
 
+                {/* Newly Added: Gender & Activity Dropdowns */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="label-text">Gender</label>
+                    <div className="relative">
+                      <Users className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" size={16} />
+                      <select
+                        className="input-field pl-10 appearance-none bg-slate-900"
+                        value={registerForm.gender}
+                        onChange={(e) => setRegisterForm({ ...registerForm, gender: e.target.value })}
+                      >
+                        <option value="MALE">Male</option>
+                        <option value="FEMALE">Female</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div>
+                    <label className="label-text">Activity Level</label>
+                    <div className="relative">
+                      <Activity className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" size={16} />
+                      <select
+                        className="input-field pl-10 appearance-none bg-slate-900"
+                        value={registerForm.activityLevel}
+                        onChange={(e) => setRegisterForm({ ...registerForm, activityLevel: e.target.value })}
+                      >
+                        <option value="SEDENTARY">Sedentary (Desk Job)</option>
+                        <option value="LIGHT">Light (1-3 days/wk)</option>
+                        <option value="MODERATE">Moderate (3-5 days/wk)</option>
+                        <option value="ACTIVE">Active (6-7 days/wk)</option>
+                        <option value="EXTRA_ACTIVE">Extra Active</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="label-text">Age</label>
@@ -276,9 +317,10 @@ export default function AuthPage() {
                         required
                         min={13}
                         max={100}
+                        placeholder="e.g. 25"
                         className="input-field pl-10"
                         value={registerForm.age}
-                        onChange={(e) => setRegisterForm({ ...registerForm, age: Number(e.target.value) })}
+                        onChange={(e) => setRegisterForm({ ...registerForm, age: e.target.value ? Number(e.target.value) : "" })}
                       />
                     </div>
                   </div>
@@ -289,35 +331,41 @@ export default function AuthPage() {
                       <input
                         type="number"
                         required
+                        placeholder="e.g. 175"
                         className="input-field pl-10"
                         value={registerForm.heightCm}
-                        onChange={(e) => setRegisterForm({ ...registerForm, heightCm: Number(e.target.value) })}
+                        onChange={(e) => setRegisterForm({ ...registerForm, heightCm: e.target.value ? Number(e.target.value) : "" })}
                       />
                     </div>
                   </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="label-text">Current Weight (kg)</label>
+                    <label className="label-text">Current Wt (kg)</label>
                     <div className="relative">
                       <Weight className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" size={16} />
                       <input
                         type="number"
                         required
+                        placeholder="e.g. 60"
                         className="input-field pl-10"
                         value={registerForm.currentWeightKg}
-                        onChange={(e) => setRegisterForm({ ...registerForm, currentWeightKg: Number(e.target.value) })}
+                        onChange={(e) => setRegisterForm({ ...registerForm, currentWeightKg: e.target.value ? Number(e.target.value) : "" })}
                       />
                     </div>
                   </div>
                   <div>
-                    <label className="label-text">Target Weight (kg)</label>
+                    <label className="label-text">Target Wt (kg)</label>
                     <div className="relative">
                       <Target className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" size={16} />
                       <input
                         type="number"
                         required
+                        placeholder="e.g. 70"
                         className="input-field pl-10"
                         value={registerForm.targetWeightKg}
-                        onChange={(e) => setRegisterForm({ ...registerForm, targetWeightKg: Number(e.target.value) })}
+                        onChange={(e) => setRegisterForm({ ...registerForm, targetWeightKg: e.target.value ? Number(e.target.value) : "" })}
                       />
                     </div>
                   </div>

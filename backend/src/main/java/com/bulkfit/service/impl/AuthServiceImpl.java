@@ -34,15 +34,18 @@ public class AuthServiceImpl implements AuthService {
             throw new DuplicateResourceException("An account with this email already exists");
         }
 
+        // Updated Builder with General Fields
         User user = User.builder()
                 .fullName(request.getFullName())
                 .email(request.getEmail())
                 .password(passwordEncoder.encode(request.getPassword()))
                 .age(request.getAge())
+                .gender(request.getGender()) // Added
+                .activityLevel(request.getActivityLevel()) // Added
                 .heightCm(request.getHeightCm())
                 .currentWeightKg(request.getCurrentWeightKg())
                 .targetWeightKg(request.getTargetWeightKg())
-                .role("USER")
+                .role("ROLE_USER") // Fixed Role
                 .build();
 
         User saved = userRepository.save(user);

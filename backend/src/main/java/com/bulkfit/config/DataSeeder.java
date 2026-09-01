@@ -12,8 +12,9 @@ import org.springframework.stereotype.Component;
 import java.util.List;
 
 /**
- * Seeds calorie-dense, high-protein foods (ideal for a hardgainer lean bulk) and
- * home / bodyweight exercises (no gym equipment required) on first boot.
+ * Initializes the database with a foundational set of common food items
+ * and standard exercises to ensure the application is ready for use on first boot.
+ * Designed for a general fitness tracking audience.
  */
 @Component
 @RequiredArgsConstructor

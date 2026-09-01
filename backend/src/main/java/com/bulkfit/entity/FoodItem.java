@@ -1,14 +1,12 @@
 package com.bulkfit.entity;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 @Entity
 @Table(name = "food_items")
-@Data
+@Getter
+@Setter // @Data hata diya lazy loading issues se bachne ke liye
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder

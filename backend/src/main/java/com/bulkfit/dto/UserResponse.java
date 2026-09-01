@@ -14,12 +14,13 @@ public class UserResponse {
     private String fullName;
     private String email;
     private int age;
+    private String gender;           // Added
+    private String activityLevel;    // Added
     private Double heightCm;
     private Double currentWeightKg;
     private Double targetWeightKg;
     private String role;
 
-    // Derived: daily calorie surplus goal for hypertrophy (Mifflin-St Jeor + surplus)
     private Double dailyCalorieGoal;
     private Double dailyProteinGoalGrams;
 }
