@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef, useCallback } from "react";
-import { Search, Plus, Trash2, Utensils, ChevronDown, Camera, Loader2, Sparkles, CheckCircle2, Minus, Flame, Beef, Wheat, Droplet, Info, ScanLine } from "lucide-react";
+import { Search, Plus, Trash2, Utensils, ChevronDown, Camera, Loader2, Sparkles, CheckCircle2, Minus, Flame, Beef, Wheat, Droplet, Info, ScanLine, X, Image as ImageIcon } from "lucide-react";
 import { dietApi, aiApi } from "../api/services";
 import CalorieProgressBar from "../components/CalorieProgressBar.jsx";
 
@@ -101,13 +101,19 @@ export default function DietPage() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
 
-  // AI Scanner States
+  // AI Scanner & Custom Camera States
   const [scanning, setScanning] = useState(false);
   const [scanProgress, setScanProgress] = useState(0);
   const [scannedResult, setScannedResult] = useState(null); 
-  const [imagePreview, setImagePreview] = useState(null); // Added for Laser Scan preview
+  const [imagePreview, setImagePreview] = useState(null); 
   const [successMsg, setSuccessMsg] = useState("");
-  const fileInputRef = useRef(null);
+  
+  // Custom Camera logic
+  const [showCameraModal, setShowCameraModal] = useState(false);
+  const [stream, setStream] = useState(null);
+  const videoRef = useRef(null);
+  const canvasRef = useRef(null);
+  const galleryInputRef = useRef(null);
 
   const loadSummary = async () => {
     const { data } = await dietApi.getSummary();
@@ -122,7 +128,15 @@ export default function DietPage() {
     })();
   }, []);
 
-  // Normal Manual Log
+  // Cleanup camera stream if component unmounts
+  useEffect(() => {
+    return () => {
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+      }
+    };
+  }, [stream]);
+
   const handleLogFood = async (e) => {
     e.preventDefault();
     setError("");
@@ -150,12 +164,63 @@ export default function DietPage() {
     await loadSummary();
   };
 
-  // 📸 Trigger AI Scan & Fake Loader
-  const handleImageUpload = async (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  // --- CUSTOM CAMERA FUNCTIONS ---
+  const startCamera = async () => {
+    setError("");
+    setShowCameraModal(true);
+    try {
+      const mediaStream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: "environment" }
+      });
+      setStream(mediaStream);
+      if (videoRef.current) {
+        videoRef.current.srcObject = mediaStream;
+      }
+    } catch (err) {
+      console.error("Camera access denied", err);
+      setError("Camera access denied. Please use the gallery instead.");
+      setShowCameraModal(false);
+      galleryInputRef.current?.click(); // fallback to gallery if camera fails
+    }
+  };
 
-    // Show Image Preview for Laser Effect
+  const closeCamera = () => {
+    if (stream) {
+      stream.getTracks().forEach(track => track.stop());
+      setStream(null);
+    }
+    setShowCameraModal(false);
+  };
+
+  const capturePhoto = () => {
+    if (videoRef.current && canvasRef.current) {
+      const video = videoRef.current;
+      const canvas = canvasRef.current;
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      
+      canvas.toBlob((blob) => {
+        const file = new File([blob], "scan.jpg", { type: "image/jpeg" });
+        closeCamera();
+        processImage(file);
+      }, "image/jpeg", 0.8);
+    }
+  };
+
+  const handleGallerySelect = (e) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      closeCamera(); // close modal if it was open
+      processImage(file);
+    }
+    if (galleryInputRef.current) galleryInputRef.current.value = "";
+  };
+  // -------------------------------
+
+  const processImage = async (file) => {
+    if (!file) return;
     const imageUrl = URL.createObjectURL(file);
     setImagePreview(imageUrl);
 
@@ -165,7 +230,6 @@ export default function DietPage() {
     setScanning(true);
     setScanProgress(0);
 
-    // Fake Progress Animation
     const progressInterval = setInterval(() => {
       setScanProgress((prev) => (prev >= 95 ? 95 : prev + Math.floor(Math.random() * 15) + 5));
     }, 400);
@@ -186,12 +250,9 @@ export default function DietPage() {
       setScanning(false);
       setImagePreview(null);
       setError(err.response?.data?.message || "Couldn't analyze that image. Try a clearer photo.");
-    } finally {
-      if (fileInputRef.current) fileInputRef.current.value = "";
     }
   };
 
-  // Updates weight in the scanned list
   const updateScannedItemWeight = (index, delta) => {
     const updatedItems = [...scannedResult.items];
     const newWeight = Math.max(10, updatedItems[index].estimatedWeightGrams + delta);
@@ -204,12 +265,9 @@ export default function DietPage() {
     setScannedResult({ ...scannedResult, items: updatedItems });
   };
 
-  // Logs all items in the scanned result
   const handleLogScannedBatch = async () => {
     if (!scannedResult?.items?.length) return;
     setSubmitting(true);
-    
-    // Calculate total calories to show in success message
     const totalAddedCals = scannedResult.items.reduce((acc, item) => {
       return acc + ((item.caloriesPer100g * item.estimatedWeightGrams) / 100);
     }, 0);
@@ -242,7 +300,6 @@ export default function DietPage() {
 
   if (loading) return <div className="flex items-center justify-center h-96 text-slate-500 animate-pulse">Loading diet data...</div>;
 
-  // Real-time Total Macros calculation (with fallbacks if AI misses data)
   const activeScannedItems = scannedResult?.items || [];
   const totals = activeScannedItems.reduce((acc, item) => {
     const multiplier = item.estimatedWeightGrams / 100;
@@ -257,29 +314,70 @@ export default function DietPage() {
   return (
     <div className="space-y-6 animate-fade-in relative">
       
+      {/* 📷 CUSTOM CAMERA MODAL UI */}
+      {showCameraModal && (
+        <div className="fixed inset-0 z-[100] bg-black flex flex-col items-center justify-center animate-fade-in">
+          {/* Live Video Stream */}
+          <video ref={videoRef} autoPlay playsInline muted className="absolute inset-0 w-full h-full object-cover" />
+          
+          {/* Square Frame Overlay */}
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none px-6">
+            <div className="w-full max-w-sm aspect-square border-2 border-white/40 rounded-3xl relative shadow-[0_0_0_9999px_rgba(0,0,0,0.6)]">
+              {/* Corner brackets */}
+              <div className="absolute -top-1 -left-1 w-8 h-8 border-t-4 border-l-4 border-emerald-500 rounded-tl-xl"></div>
+              <div className="absolute -top-1 -right-1 w-8 h-8 border-t-4 border-r-4 border-emerald-500 rounded-tr-xl"></div>
+              <div className="absolute -bottom-1 -left-1 w-8 h-8 border-b-4 border-l-4 border-emerald-500 rounded-bl-xl"></div>
+              <div className="absolute -bottom-1 -right-1 w-8 h-8 border-b-4 border-r-4 border-emerald-500 rounded-br-xl"></div>
+            </div>
+          </div>
+
+          <p className="absolute top-16 text-white font-medium bg-black/50 px-5 py-2.5 rounded-full backdrop-blur-md text-sm z-10">
+            Position food within frame
+          </p>
+
+          {/* Bottom Controls */}
+          <div className="absolute bottom-0 w-full p-8 pb-12 flex justify-between items-center bg-gradient-to-t from-black via-black/80 to-transparent z-10">
+            {/* Gallery Button */}
+            <button onClick={() => galleryInputRef.current?.click()} className="p-4 bg-slate-800/80 rounded-full text-white hover:bg-slate-700 transition-colors">
+              <ImageIcon size={24} />
+            </button>
+            
+            {/* Shutter Button */}
+            <button onClick={capturePhoto} className="w-20 h-20 bg-white/20 rounded-full p-1.5 flex items-center justify-center transition-transform active:scale-90">
+              <div className="w-full h-full bg-white rounded-full"></div>
+            </button>
+            
+            {/* Close Button */}
+            <button onClick={closeCamera} className="p-4 bg-slate-800/80 rounded-full text-white hover:bg-slate-700 transition-colors">
+              <X size={24} />
+            </button>
+          </div>
+          
+          {/* Hidden Canvas to capture frame */}
+          <canvas ref={canvasRef} className="hidden" />
+        </div>
+      )}
+
+      {/* Hidden Gallery Input (Always ready for fallback) */}
+      <input ref={galleryInputRef} type="file" accept="image/*" className="hidden" onChange={handleGallerySelect} />
+
+
       {/* 🚀 1. THE "TECHY" LASER SCAN OVERLAY */}
       {scanning && (
-        <div className="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-md flex flex-col items-center justify-center p-4 animate-fade-in">
-          
+        <div className="fixed inset-0 z-[110] bg-slate-950/90 backdrop-blur-md flex flex-col items-center justify-center p-4 animate-fade-in">
           <div className="relative w-64 h-64 sm:w-80 sm:h-80 rounded-2xl overflow-hidden border-2 border-slate-700 shadow-2xl mb-8 bg-slate-900">
-            {/* User Uploaded Image Preview */}
             {imagePreview && <img src={imagePreview} alt="scanning" className="w-full h-full object-cover opacity-60" />}
-            
-            {/* Glowing Laser Scan Line */}
             <div 
               className="absolute left-0 w-full h-[3px] bg-emerald-400 shadow-[0_0_25px_8px_rgba(52,211,119,0.7)] transition-all duration-300 ease-linear flex items-center justify-center"
               style={{ top: `${scanProgress}%` }}
             >
               <ScanLine className="text-white absolute opacity-50" size={32} />
             </div>
-
-            {/* Corner Bracket UI Details */}
             <div className="absolute top-3 left-3 w-6 h-6 border-t-2 border-l-2 border-emerald-500"></div>
             <div className="absolute top-3 right-3 w-6 h-6 border-t-2 border-r-2 border-emerald-500"></div>
             <div className="absolute bottom-3 left-3 w-6 h-6 border-b-2 border-l-2 border-emerald-500"></div>
             <div className="absolute bottom-3 right-3 w-6 h-6 border-b-2 border-r-2 border-emerald-500"></div>
           </div>
-
           <h2 className="text-4xl font-black text-slate-100 mb-2">{scanProgress}%</h2>
           <p className="text-sm text-emerald-400 font-medium tracking-wide">
             {scanProgress < 30 ? "Extracting image data..." : scanProgress < 70 ? "Identifying ingredients via AI..." : "Calculating accurate macros..."}
@@ -311,7 +409,6 @@ export default function DietPage() {
       <CalorieProgressBar consumed={summary.caloriesConsumed} goal={summary.calorieGoal} surplusOrDeficit={summary.surplusOrDeficit} goalMet={summary.goalMet} />
 
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
-        
         {/* LEFT COLUMN: LOGGING AREA */}
         <div className="lg:col-span-2 space-y-4">
           
@@ -320,7 +417,6 @@ export default function DietPage() {
           {/* 📱 3. RICH AI RESULT CARD */}
           {scannedResult ? (
             <div className="glass-card p-5 border border-emerald-500/40 bg-slate-900/90 shadow-2xl animate-fade-in space-y-5">
-              
               <div className="flex items-start justify-between border-b border-slate-800 pb-4">
                 <div>
                   <h2 className="text-lg font-bold text-slate-100 flex items-center gap-2 mb-1">
@@ -344,7 +440,6 @@ export default function DietPage() {
                 </div>
               ) : (
                 <>
-                  {/* Top Macros UI with Icons */}
                   <div className="grid grid-cols-4 gap-2 text-center">
                     <div className="bg-slate-950/60 py-3 px-1 rounded-xl border border-slate-800 shadow-inner flex flex-col items-center">
                       <Flame size={16} className="text-orange-400 mb-1 opacity-80" />
@@ -368,7 +463,6 @@ export default function DietPage() {
                     </div>
                   </div>
 
-                  {/* Detected Items List - Editable */}
                   <div className="space-y-2.5 max-h-64 overflow-y-auto pr-1 custom-scrollbar">
                     {activeScannedItems.map((item, idx) => (
                       <div key={idx} className="flex flex-col bg-slate-800/40 hover:bg-slate-800/60 p-3.5 rounded-xl border border-slate-700/50 transition-colors">
@@ -419,11 +513,10 @@ export default function DietPage() {
                   <div className="flex-1 min-w-0">
                     <FoodSearchDropdown onSelect={setSelectedFood} selectedFood={selectedFood} />
                   </div>
-                  <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
-                  <button type="button" onClick={() => fileInputRef.current?.click()} title="Scan food with AI"
+                  {/* UPDATE: Replaced hidden input trigger with custom camera trigger */}
+                  <button type="button" onClick={startCamera} title="Scan food with AI"
                     className="w-[46px] h-[46px] rounded-xl bg-slate-900/60 border border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/15 hover:border-emerald-400 hover:shadow-[0_0_15px_rgba(16,185,129,0.2)] flex items-center justify-center transition-all group relative overflow-hidden">
                     <Camera size={20} className="group-hover:scale-110 transition-transform relative z-10" />
-                    {/* Small shine effect on hover */}
                     <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-emerald-400/20 to-transparent opacity-0 group-hover:opacity-100 transform translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-500"></div>
                   </button>
                 </div>
