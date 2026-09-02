@@ -419,7 +419,7 @@ export default function DietPage() {
                   <div className="flex-1 min-w-0">
                     <FoodSearchDropdown onSelect={setSelectedFood} selectedFood={selectedFood} />
                   </div>
-                  <input ref={fileInputRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={handleImageUpload} />
+                  <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
                   <button type="button" onClick={() => fileInputRef.current?.click()} title="Scan food with AI"
                     className="w-[46px] h-[46px] rounded-xl bg-slate-900/60 border border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/15 hover:border-emerald-400 hover:shadow-[0_0_15px_rgba(16,185,129,0.2)] flex items-center justify-center transition-all group relative overflow-hidden">
                     <Camera size={20} className="group-hover:scale-110 transition-transform relative z-10" />
