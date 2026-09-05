@@ -21,6 +21,10 @@ public class AuthController {
     public ResponseEntity<AuthResponse> register(@Valid @RequestBody RegisterRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(authService.register(request));
     }
+    @GetMapping("/ping")
+    public ResponseEntity<String> keepAwake() {
+        return ResponseEntity.ok("Server is awake and lifting heavy!");
+    }
 
     @PostMapping("/login")
     public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest request) {
