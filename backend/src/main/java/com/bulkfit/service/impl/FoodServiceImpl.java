@@ -19,7 +19,7 @@ public class FoodServiceImpl implements FoodService {
     private final FoodItemRepository foodItemRepository;
 
     @Override
-    @Transactional(readOnly = true) // Database read operation optimize karne ke liye
+    @Transactional(readOnly = true)
     public List<FoodItemResponse> searchFoodItems(String query) {
         List<FoodItem> items = StringUtils.hasText(query)
                 ? foodItemRepository.findByNameContainingIgnoreCase(query)
@@ -28,7 +28,7 @@ public class FoodServiceImpl implements FoodService {
     }
 
     @Override
-    @Transactional(readOnly = true) // Database read operation optimize karne ke liye
+    @Transactional(readOnly = true)
     public List<FoodItemResponse> getAllFoodItems() {
         return foodItemRepository.findAll().stream().map(this::toResponse).collect(Collectors.toList());
     }

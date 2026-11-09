@@ -87,7 +87,7 @@ public class AiServiceImpl implements AiService {
 
         Map<String, Object> requestBody = Map.of(
                 "model", "google/gemini-3.7-flash",
-                "max_tokens", 1500,
+                "max_tokens", 800,
                 "messages", List.of(
                         Map.of("role", "user",
                                 "content", List.of(

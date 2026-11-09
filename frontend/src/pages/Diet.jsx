@@ -314,7 +314,7 @@ export default function DietPage() {
   return (
     <div className="space-y-6 animate-fade-in relative">
       
-      {/* 📷 CUSTOM CAMERA MODAL UI */}
+      {/* CUSTOM CAMERA MODAL UI */}
       {showCameraModal && (
         <div className="fixed inset-0 z-[100] bg-black flex flex-col items-center justify-center animate-fade-in">
           {/* Live Video Stream */}
@@ -362,7 +362,7 @@ export default function DietPage() {
       <input ref={galleryInputRef} type="file" accept="image/*" className="hidden" onChange={handleGallerySelect} />
 
 
-      {/* 🚀 1. THE "TECHY" LASER SCAN OVERLAY */}
+      {/*  1. THE "TECHY" LASER SCAN OVERLAY */}
       {scanning && (
         <div className="fixed inset-0 z-[110] bg-slate-950/90 backdrop-blur-md flex flex-col items-center justify-center p-4 animate-fade-in">
           <div className="relative w-64 h-64 sm:w-80 sm:h-80 rounded-2xl overflow-hidden border-2 border-slate-700 shadow-2xl mb-8 bg-slate-900">
