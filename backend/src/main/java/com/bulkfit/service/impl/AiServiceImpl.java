@@ -4,7 +4,7 @@ import com.bulkfit.dto.AiCoachRequest;
 import com.bulkfit.dto.AiCoachResponse;
 import com.bulkfit.dto.DetectedItem;
 import com.bulkfit.dto.MultiFoodScanResponse;
-import com.bulkfit.entity.AiPlan; // 🔥 Naya Import
+import com.bulkfit.entity.AiPlan;
 import com.bulkfit.entity.User;
 import com.bulkfit.exception.AiServiceException;
 import com.bulkfit.exception.BadRequestException;
@@ -46,6 +46,7 @@ public class AiServiceImpl implements AiService {
     @Value("${bulkfit.ai.groq.apiKey}")
     private String groqApiKey;
 
+    // Ab ye variable Render se teri direct Google (AQ...) wali key uthayega
     @Value("${bulkfit.ai.openrouter.apiKey}")
     private String openRouterApiKey;
 
@@ -85,20 +86,24 @@ public class AiServiceImpl implements AiService {
                 }
                 """;
 
+        // Gemini Vision API Format
         Map<String, Object> requestBody = Map.of(
-                "model", "google/gemini-3.7-flash",
-                "max_tokens", 1200,
-                "messages", List.of(
-                        Map.of("role", "user",
-                                "content", List.of(
-                                        Map.of("type", "text", "text", prompt),
-                                        Map.of("type", "image_url", "image_url", Map.of("url", "data:" + mimeType + ";base64," + base64Image))
-                                )
-                        )
+                "contents", List.of(
+                        Map.of("parts", List.of(
+                                Map.of("text", prompt),
+                                Map.of("inline_data", Map.of(
+                                        "mime_type", mimeType,
+                                        "data", base64Image
+                                ))
+                        ))
+                ),
+                "generationConfig", Map.of(
+                        "responseMimeType", "application/json"
                 )
         );
 
-        String rawText = callOpenRouterForVision(requestBody);
+        String rawText = callGoogleGeminiForVision(requestBody);
+        System.out.println("🤖 RAW AI RESPONSE: \n" + rawText);
         JsonNode json = extractJson(rawText);
 
         List<DetectedItem> detectedItems = new ArrayList<>();
@@ -135,9 +140,12 @@ public class AiServiceImpl implements AiService {
                 Act as an expert fitness coach for BulkFit, helping underweight users gain muscle mass.
 
                 Client profile:
-                - Weight: %.1f kg | Height: %.1f cm | Age: %d
-                - Goal: %s | Diet: %s | Workout Style: %s
-                - Daily Target: %.0f kcal | %.0f g protein
+- Weight: %.1f kg | Height: %.1f cm | Age: %d
+
+- Goal: %s | Diet: %s | Workout Style: %s
+
+- Daily Target: %.0f kcal | %.0f g protein
+
 
                 Create a 7-day workout routine and meal plan in EXACTLY this JSON shape:
                 {
@@ -168,7 +176,6 @@ public class AiServiceImpl implements AiService {
                 "temperature", 0.7
         );
 
-        // 1. Groq API call
         String rawText = callGroqApi(requestBody);
 
         AiPlan existingPlan = aiPlanRepository.findByUser(user).orElse(new AiPlan());
@@ -213,18 +220,16 @@ public class AiServiceImpl implements AiService {
         }
     }
 
-    private String callOpenRouterForVision(Map<String, Object> requestBody) {
+    private String callGoogleGeminiForVision(Map<String, Object> requestBody) {
         try {
             WebClient freshClient = WebClient.builder()
                     .codecs(configurer -> configurer.defaultCodecs().maxInMemorySize(10 * 1024 * 1024))
                     .build();
 
+            // Direct connection to Google's stable Gemini 1.5 Flash Vision Model
             JsonNode response = freshClient.post()
-                    .uri("https://openrouter.ai/api/v1/chat/completions")
-                    .header("Authorization", "Bearer " + openRouterApiKey)
+                    .uri("https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=" + openRouterApiKey.trim())
                     .header("Content-Type", "application/json")
-                    .header("HTTP-Referer", "http://localhost:5173")
-                    .header("X-Title", "BulkFit Coach")
                     .bodyValue(requestBody)
                     .retrieve()
                     .bodyToMono(JsonNode.class)
@@ -234,18 +239,19 @@ public class AiServiceImpl implements AiService {
                 throw new AiServiceException("AI returned an empty response");
             }
 
-            JsonNode textNode = response.path("choices").path(0).path("message").path("content");
+            // Extracting JSON from Google's exact format
+            JsonNode textNode = response.path("candidates").path(0).path("content").path("parts").path(0).path("text");
             if (textNode.isMissingNode() || textNode.asText().isBlank()) {
                 throw new AiServiceException("AI did not return a usable result.");
             }
             return textNode.asText();
 
         } catch (org.springframework.web.reactive.function.client.WebClientResponseException e) {
-            System.err.println("\n❌ OPENROUTER VISION REJECTED THE REQUEST!");
-            System.err.println("Exact Error from OpenRouter: " + e.getResponseBodyAsString() + "\n");
-            throw new AiServiceException("OpenRouter Vision Error: " + e.getResponseBodyAsString(), e);
+            System.err.println("\n❌ GEMINI VISION REJECTED THE REQUEST!");
+            System.err.println("Exact Error from Gemini: " + e.getResponseBodyAsString() + "\n");
+            throw new AiServiceException("Gemini Vision Error: " + e.getResponseBodyAsString(), e);
         } catch (Exception e) {
-            log.error("OpenRouter Vision API call failed", e);
+            log.error("Gemini Vision API call failed", e);
             throw new AiServiceException("Failed to reach the Vision AI service for image scanning.", e);
         }
     }
