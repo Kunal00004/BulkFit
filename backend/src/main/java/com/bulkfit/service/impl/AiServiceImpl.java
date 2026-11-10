@@ -228,7 +228,7 @@ public class AiServiceImpl implements AiService {
 
             // Direct connection to Google's stable Gemini 3.8 Flash Vision Model
             JsonNode response = freshClient.post()
-                    .uri("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=" + openRouterApiKey.trim())
+                    .uri("https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent?key=" + openRouterApiKey.trim())
                     .header("Content-Type", "application/json")
                     .bodyValue(requestBody)
                     .retrieve()
